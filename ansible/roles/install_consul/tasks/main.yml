@@ -1,0 +1,19 @@
+---
+- name: Determine if the host should become a server
+  set_fact:
+    consul_is_server: "true"
+  when: inventory_hostname in groups['consul']
+
+- name: Determine if the host should become a client
+  set_fact:
+    consul_is_server: "false"
+  when: inventory_hostname in groups['consul_client']
+
+- name: Include UFW tasks
+  include_tasks: ufw.yml
+
+- name: Include Consul tasks
+  include_tasks: consul.yml
+
+- name: Include systemd-resolved tasks
+  include_tasks: resolved.yml

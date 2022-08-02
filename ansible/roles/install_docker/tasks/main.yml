@@ -1,0 +1,45 @@
+---
+# Origin from: https://nsirap.com/posts/048-ansible-install-docker-and-docker-compose/
+  - name: Install dependencies
+    apt:
+      name:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - gnupg-agent
+        - software-properties-common
+      state: latest
+      update_cache: yes
+
+  - name: Add GPG key
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Add Docker repository
+    apt_repository:
+      repo: deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+      state: present
+
+  - name: Install Docker
+    apt:
+      name:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+      state: latest
+      update_cache: yes
+
+  - name: Add users to docker group
+    user:
+      name: '{{ item }}'
+      groups: docker
+      append: yes
+    loop:
+      - "{{ ansible_user }}"
+
+  - name: Install docker-compose
+    get_url:
+      url : https://github.com/docker/compose/releases/download/1.29.2/docker-compose-Linux-x86_64
+      dest: /usr/local/bin/docker-compose
+      mode: '755'

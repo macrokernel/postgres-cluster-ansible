@@ -1,0 +1,13 @@
+---
+docker_consul_config_json_location: /opt/consul
+docker_consul_config_json_template: templates/config.json.j2
+docker_consul_config_json_file_name: config.json
+
+docker_consul_docker_compose_location: /opt/consul
+docker_consul_docker_compose_template: templates/consul-docker-compose.yml.j2
+docker_consul_docker_compose_file_name: docker-compose.yml
+docker_consul_docker_compose_binary_full_path: /usr/local/bin/docker-compose
+
+docker_consul_service_location: /etc/systemd/system
+docker_consul_service_template: templates/consul-docker.service.j2
+docker_consul_service_name: consul-docker

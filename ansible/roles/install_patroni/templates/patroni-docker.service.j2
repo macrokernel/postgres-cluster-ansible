@@ -1,0 +1,12 @@
+[Unit]
+Description=patroni-docker service
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+ExecStart={{ docker_patroni_docker_compose_binary_full_path }} -f {{ docker_patroni_docker_compose_location }}/{{ docker_patroni_docker_compose_file_name }} up
+ExecStop={{ docker_patroni_docker_compose_binary_full_path }} -f {{ docker_patroni_docker_compose_location }}/{{ docker_patroni_docker_compose_file_name }} stop
+
+[Install]
+WantedBy=multi-user.target

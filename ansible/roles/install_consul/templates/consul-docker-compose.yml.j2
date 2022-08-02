@@ -1,0 +1,13 @@
+version: '3.5'
+
+services:
+  consul:
+    restart: unless-stopped
+    image: consul:1.12.0
+    entrypoint: /bin/consul agent -server -data-dir /consul/data -config-file /consul/config/config.json
+    container_name: consul
+    hostname: {{ inventory_hostname }}
+    network_mode: host
+    volumes:
+      - {{ docker_consul_config_json_location }}/{{ docker_consul_config_json_file_name }}:/consul/config/config.json
+      - /opt/consul/data:/consul/data:rw

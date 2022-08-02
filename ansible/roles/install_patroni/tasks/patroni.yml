@@ -1,0 +1,177 @@
+---
+- block:
+  - name: Log in to the docker registry {{ docker_registry_address }}
+    shell: echo "{{ docker_registry_password }}" | docker login --password-stdin -u "{{ docker_registry_username }}" "{{ docker_registry_address }}"
+    become: yes
+
+  - name: Pull docker image {{ docker_image }}
+    command: docker pull {{ docker_image }}
+    become: yes
+
+  - name: Tag docker image {{ docker_image }} as patroni:latest
+    command: docker tag {{ docker_image }} patroni:latest
+    become: yes
+
+  - name: Remove previous versions of the docker image {{ docker_image }}
+    shell: docker rmi $(docker images -f 'dangling=true' | tail -n +2 | grep {{ docker_registry_address }} | awk '{print $3}') || true
+    become: yes
+  when: docker_registry_address|default("") != "" and docker_registry_username|default("") != "" and 
+        docker_registry_password|default("") != "" and docker_image|default("") != ""
+
+
+- block:
+  - name: Get postgres user id in patroni docker image
+    command: docker run --rm patroni id -u postgres
+    register: pg_uid
+    become: yes
+
+  - name: Get postgres group id in patroni docker image
+    command: docker run --rm patroni id -g postgres
+    register: pg_gid
+    become: yes
+  when: docker_patroni_docker_files_template|default("") != ""
+
+
+- block:
+  - name: Enable software watchdog kernel module loading on boot
+    lineinfile:
+      path: /etc/modules
+      regexp: "^softdog"
+      line: "softdog"
+
+  - name: Disable software watchdog kernel module blacklisting
+    shell: |
+      sed -e "s/^blacklist softdog/#blacklist softdog/g" -i /etc/modprobe.d/*
+      sed -e "s/^blacklist softdog/#blacklist softdog/g" -i /lib/modprobe.d/*
+
+  - name: Set watchdog device file ownership to postgres
+    lineinfile:
+      path: "/etc/udev/rules.d/61-watchdog.rules"
+      line: "KERNEL==\"watchdog\", OWNER=\"{{ pg_uid.stdout }}\", GROUP=\"{{ pg_gid.stdout }}\""
+      create: yes
+
+  - name: Load software watchdog kernel module
+    command: modprobe softdog
+    become: yes
+  when: patroni_watchdog|default("") != "off"
+
+
+- block:
+  - name: Create {{ docker_patroni_location }}
+    file:
+      path: "{{ docker_patroni_location }}"
+      state: directory
+      mode: 0755
+
+  - name: Template and copy over {{ docker_patroni_postgresql_env_file_name }}
+    template:
+      src: "{{ docker_patroni_postgresql_env_template }}"
+      dest: "{{ docker_patroni_location }}/{{ docker_patroni_postgresql_env_file_name }}"
+      mode: 0600
+    when: (docker_patroni_postgresql_env_template|default("") != "")
+
+  - name: Template and copy over {{ docker_patroni_config_yml_file_name }}
+    template:
+      src: "{{ docker_patroni_config_yml_template }}"
+      dest: "{{ docker_patroni_location }}/{{ docker_patroni_config_yml_file_name }}"
+      owner: "{{ pg_uid.stdout }}"
+      group: "{{ pg_gid.stdout }}"
+      mode: 0600
+    when: (docker_patroni_config_yml_template|default("") != "")
+
+  - name: Template and copy over {{ docker_patroni_walg_json_file_name }}
+    template:
+      src: "{{ docker_patroni_walg_json_template }}"
+      dest: "{{ docker_patroni_location }}/{{ docker_patroni_walg_json_file_name }}"
+      owner: "{{ pg_uid.stdout }}"
+      group: "{{ pg_gid.stdout }}"
+      mode: 0600
+    when: (docker_patroni_walg_json_template|default("") != "")
+  when: (docker_patroni_location|default("") != "")
+
+
+- block:
+  - name: Check that PostgreSQL data volume {{ postgres_volume_name }} is not in use by any docker container other than patroni
+    shell: "/bin/bash -c '[ $(comm -2 -3 <(docker ps -aq --filter volume={{ postgres_volume_name }} |sort) <(docker ps -aq --filter name=patroni |sort) |wc -l) -eq 0 ]'"
+    any_errors_fatal: true
+
+  - name: Move existing PostgreSQL data to /var/lib/postgresql/data directory in {{ postgres_volume_name }} docker volume
+    shell: "docker run --rm -u root -v {{ postgres_volume_name }}:/var/lib/postgresql patroni bash -c \"if [ -f /var/lib/postgresql/PG_VERSION ]; then mkdir -p /var/lib/postgresql/data && cd /var/lib/postgresql && ls -a |grep -vE '^(data|.|..)$' |xargs mv -t data && chmod 0700 /var/lib/postgresql/data; else true; fi\""
+    when: postgres_db_autoupgrade|default(false) == false
+
+  - name: Set PostgreSQL data directory permissions to postgres user in {{ postgres_volume_name }} docker volume
+    shell: "docker run --rm -u root -v {{ postgres_volume_name }}:/var/lib/postgresql patroni chown -R {{ pg_uid.stdout }}:{{ pg_gid.stdout }} /var/lib/postgresql"
+    when: postgres_db_autoupgrade|default(false) == false
+
+  - name: Upgrade PostgreSQL database major version in data volume {{ postgres_volume_name }} if required
+    shell: "docker run --rm -u root -e POSTGRES_REPLICATOR_USERNAME -e POSTGRES_REPLICATOR_PASSWORD -e POSTGRES_SUPERUSER_USERNAME -e POSTGRES_SUPERUSER_PASSWORD -v {{ postgres_volume_name }}:/var/lib/postgresql patroni /usr/local/bin/upgrade-postgres.sh"
+    environment:
+      - POSTGRES_REPLICATOR_USERNAME: "{{ postgres_replicator_username }}"
+      - POSTGRES_REPLICATOR_PASSWORD: "{{ postgres_replicator_password }}"
+      - POSTGRES_SUPERUSER_USERNAME: "{{ postgres_superuser_username }}"
+      - POSTGRES_SUPERUSER_PASSWORD: "{{ postgres_superuser_password }}"
+    when: postgres_db_autoupgrade|default(false) == true
+
+  - name: Check PostgreSQL major version in {{ postgres_volume_name }} docker volume
+    shell: "docker run --rm -v {{ postgres_volume_name }}:/var/lib/postgresql busybox sh -c 'cat /var/lib/postgresql/data/PG_VERSION || true'"
+    register: check_pg_version
+
+  - name: Fail if PostgreSQL major version in {{ postgres_volume_name }} docker volume is not {{ postgres_major }}
+    fail:
+      msg: "PostgreSQL major version mismatch: '{{ check_pg_version.stdout }}' is not equal to '{{ postgres_major }}'"
+    any_errors_fatal: true
+    when: (check_pg_version.stdout|default("") !=  "") and (check_pg_version.stdout|default("") != postgres_major)
+
+  - name: Validate PostgreSQL configuration
+    shell: "docker run --rm -v {{ postgres_volume_name }}:/var/lib/postgresql -v {{ docker_patroni_location }}/{{ docker_patroni_config_yml_file_name }}:/var/lib/postgresql/patroni.yml:ro -v {{ docker_patroni_location }}/{{ docker_patroni_walg_json_file_name }}:/var/lib/postgresql/walg.json:ro patroni patroni --validate-config /var/lib/postgresql/patroni.yml"
+  when: postgres_volume_name|default("") != ""
+
+
+- block:
+  - name: Create {{ docker_patroni_docker_compose_location }}
+    file:
+      path: "{{ docker_patroni_docker_compose_location }}"
+      state: directory
+
+  - name: Template and copy over patroni docker-compose file
+    template:
+      src: "{{ docker_patroni_docker_compose_template }}"
+      dest: "{{ docker_patroni_docker_compose_location }}/{{ docker_patroni_docker_compose_file_name }}"
+      owner: root
+      group: root
+      mode: 0644
+  when: docker_patroni_docker_compose_template|default("") != ""
+
+
+- block:
+  - name: Create {{ docker_patroni_service_location }}
+    file:
+      path: "{{ docker_patroni_service_location }}"
+      state: directory
+
+  - name: Template and copy over the systemd service file
+    template:
+      src: "{{ docker_patroni_service_template }}"
+      dest: "{{ docker_patroni_service_location }}/{{ docker_patroni_service_name }}.service"
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: Reload systemd
+    systemd:
+      state: restarted
+      daemon_reload: yes
+      enabled: yes
+      name: "{{ docker_patroni_service_name }}"
+  when: (docker_patroni_service_template|default("") != "") and (ansible_service_mgr == "systemd")
+
+
+- block:
+  - name: Create WAL-G PostgreSQL data backup cron job
+    cron:
+      name: "Backup PostgreSQL data on Patroni master node"
+      day: "{{ postgres_backup_cron_day }}"
+      hour: "{{ postgres_backup_cron_hour }}"
+      minute: "{{ postgres_backup_cron_minute }}"
+      job: "[ '200' = $(curl -s -o /dev/null -w '\\%{http_code}' http://localhost:8008) ] && docker exec patroni wal-g --config /var/lib/postgresql/{{ docker_patroni_walg_json_file_name }} backup-push /var/lib/postgresql/data 2>&1 | /usr/bin/logger -t wal-g && docker exec patroni wal-g --config /var/lib/postgresql/{{ docker_patroni_walg_json_file_name }} delete retain FULL {{ postgres_backup_keep_full }} --confirm 2>&1 | /usr/bin/logger -t wal-g"
+  when: (postgres_backup_cron_day|default("") != "") and (postgres_backup_cron_hour|default("") != "") and (postgres_backup_cron_minute|default("") != "") and (postgres_backup_keep_full|default("") != "")

@@ -1,0 +1,64 @@
+# === Common soft settings
+docker_compose_version: "1.29.2"
+
+
+# === Docker registry and image settings
+# Docker container registry address, ex: gitlab.example.com:5050
+docker_registry_address: 
+# For GitLab container registry username/password see GitLab GUI: Settings -> Repository -> Deploy tokens
+docker_registry_username: 
+docker_registry_password: 
+# Patroni docker image name, ex: gitlab.example.com:5050/postgres-cluster:postgresql-14-postgis-3-timescaledb-2
+docker_image: 
+
+
+# === Network settings for access control
+# Docker network address on the docker0 bridge of the target hosts, ex: 172.17.0.0/16
+docker_network: "172.17.0.0/16"
+# LAN network address of the target hosts, ex: 10.1.1.0/24
+lan_network: ""
+
+
+# === Consul
+# Consul encryption key can be generated with this command: head -c${1:-32} /dev/urandom | base64
+consul_encrypt: ""
+consul_dc: "dc1"
+consul_domain: "consul"
+systemd_resolved_config_file: "/etc/systemd/resolved.conf"
+
+
+# === Patroni
+# The versions must be in sync with the versions in patroni docker image GitLab CI/CD settings
+postgres_major: "14"
+postgis_major: "3"
+timescaledb_major: "2"
+walg_version: "2.0.0"
+# Allowed values: off, automatic, required
+patroni_watchdog: "automatic"
+# Allowed values: initdb, walg
+patroni_bootstrap_method: "initdb"
+# Point in time recovery, ex: "2022-05-20 13:45:00.000"
+patroni_recovery_target_time: ""
+patroni_recovery_target_timeline: "latest"
+patroni_scope: "patroni-cluster"
+# Try to automatically upgrade PostgreSQL DB data in \{\{ postgres_volume_name \}\} if it is older than \{\{ postgres_major \}\}
+postgres_db_autoupgrade: false
+postgres_replicator_username: "replicator"
+postgres_replicator_password: ""
+postgres_superuser_username: "postgres"
+postgres_superuser_password: ""
+# Docker volume for PostgreSQL data storage
+postgres_volume_name: "postgresql-data"
+
+
+# === WAL-G
+s3_access_key: ""
+s3_secret_key: ""
+s3_region: "ru-central1"
+s3_endpoint: "https://storage.yandexcloud.net/"
+s3_backup_path: "s3://backups/postgresql/"
+s3_path_style: "true"
+postgres_backup_keep_full: "7"
+postgres_backup_cron_day: "*"
+postgres_backup_cron_hour: "5"
+postgres_backup_cron_minute: "20"

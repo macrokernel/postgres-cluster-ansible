@@ -1,0 +1,25 @@
+version: '3.5'
+
+services:
+  patroni:
+    restart: unless-stopped
+    image: patroni:latest
+    container_name: patroni
+    hostname: patroni-{{ inventory_hostname }}
+    # Connect to the docker0 bridge network
+    network_mode: bridge
+    ports:
+      - "8008:8008"
+      - "5432:5432"
+    devices:
+      - /dev/watchdog:/dev/watchdog:rw
+    env_file:
+      - {{ docker_patroni_location }}/{{ docker_patroni_postgresql_env_file_name }}
+    volumes:
+      - {{ docker_patroni_location }}/{{ docker_patroni_config_yml_file_name }}:/var/lib/postgresql/{{ docker_patroni_config_yml_file_name }}:ro
+      - {{ docker_patroni_location }}/{{ docker_patroni_walg_json_file_name }}:/var/lib/postgresql/{{ docker_patroni_walg_json_file_name }}:ro
+      - {{ postgres_volume_name }}:/var/lib/postgresql
+
+volumes:
+  {{ postgres_volume_name }}:
+    external: true

@@ -1,0 +1,13 @@
+[Unit]
+Description=consul-docker service
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+ExecStart={{ docker_consul_docker_compose_binary_full_path }} -f {{ docker_consul_docker_compose_location }}/{{ docker_consul_docker_compose_file_name }} up
+ExecStop={{ docker_consul_docker_compose_binary_full_path }} -f {{ docker_consul_docker_compose_location }}/{{ docker_consul_docker_compose_file_name }} stop
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

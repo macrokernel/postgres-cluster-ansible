@@ -1,0 +1,20 @@
+{
+    "datacenter": "{{ consul_dc }}",
+    "domain": "{{ consul_domain }}",
+    "server": {{ consul_is_server|string|lower }},
+    "ui": false,
+    "advertise_addr": "{{ lan_host }}",
+    "client_addr": "{{ lan_host }}",
+    "bootstrap_expect": {{ groups['consul'] | length }},
+    "retry_join": [{{ groups['consul']|map("to_json")|join(", ") }}],
+    "ports": {
+       "dns": 53
+    },
+    "recursors": [ "8.8.8.8" ],
+    "dns_config": {
+       "service_ttl": {
+          "*": "10s"
+       }
+    },
+    "encrypt": "{{ consul_encrypt }}"
+}

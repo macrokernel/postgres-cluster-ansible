@@ -1,0 +1,33 @@
+-- Create PostgreSQL superuser and replicator users required by Patroni and set their passwords
+
+DO
+$do$
+BEGIN
+   IF EXISTS (
+      SELECT FROM pg_catalog.pg_roles
+      WHERE  rolname = '{{ POSTGRES_SUPERUSER_USERNAME }}') THEN
+
+      RAISE NOTICE 'role "{{ POSTGRES_SUPERUSER_USERNAME }}" already exists, skipping';
+   ELSE
+      CREATE USER {{ POSTGRES_SUPERUSER_USERNAME }} WITH SUPERUSER;
+   END IF;
+END
+$do$;
+
+ALTER USER {{ POSTGRES_SUPERUSER_USERNAME }} WITH ENCRYPTED PASSWORD '{{ POSTGRES_SUPERUSER_PASSWORD }}';
+
+DO
+$do$
+BEGIN
+   IF EXISTS (
+      SELECT FROM pg_catalog.pg_roles
+      WHERE  rolname = '{{ POSTGRES_REPLICATOR_USERNAME }}') THEN
+
+      RAISE NOTICE 'role "{{ POSTGRES_REPLICATOR_USERNAME }}" already exists, skipping';
+   ELSE
+      CREATE USER {{ POSTGRES_REPLICATOR_USERNAME }} WITH REPLICATION;
+   END IF;
+END
+$do$;
+
+ALTER USER {{ POSTGRES_REPLICATOR_USERNAME }} WITH ENCRYPTED PASSWORD '{{ POSTGRES_REPLICATOR_PASSWORD }}';

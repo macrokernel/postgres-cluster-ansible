@@ -1,0 +1,6 @@
+---
+- hosts: consul, consul_client
+  become: yes
+  become_method: sudo
+  roles:
+    - install_consul

@@ -1,0 +1,6 @@
+---
+- name: Include UFW tasks
+  include_tasks: ufw.yml
+
+- name: Include Patroni tasks
+  include_tasks: patroni.yml

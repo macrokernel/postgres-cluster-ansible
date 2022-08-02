@@ -1,0 +1,18 @@
+{
+    "PGDATA": "/var/lib/postgresql/data",
+    "PGHOST": "/var/run/postgresql",
+
+    "AWS_REGION": "{{ s3_region }}",
+    "AWS_ENDPOINT": "{{ s3_endpoint }}",
+    "AWS_ACCESS_KEY_ID": "{{ s3_access_key }}",
+    "AWS_SECRET_ACCESS_KEY": "{{ s3_secret_key }}",
+    "AWS_S3_FORCE_PATH_STYLE": "{{ s3_path_style }}",
+    "WALG_S3_PREFIX": "{{ s3_backup_path }}",
+
+    "WALG_PREFETCH_DIR": "/var/lib/postgresql/walg_prefetch",
+    "WALG_COMPRESSION_METHOD": "brotli",
+    "WALG_DELTA_MAX_STEPS": "5",
+    "WALG_UPLOAD_CONCURRENCY": 2,
+    "WALG_DOWNLOAD_CONCURRENCY": 2,
+    "WALG_UPLOAD_DISK_CONCURRENCY": 2
+}

@@ -1,0 +1,15 @@
+---
+- hosts: 127.0.0.1
+  connection: local
+  tasks:
+    - name: Generate group_vars/all.yml
+      template:
+        src: ./group_vars/template_all.yml
+        dest: ./group_vars/all.yml
+        force: no
+
+    - name: Generate inventory.ini
+      template:
+        src: ./template_inventory.ini
+        dest: ./inventory.ini
+        force: no

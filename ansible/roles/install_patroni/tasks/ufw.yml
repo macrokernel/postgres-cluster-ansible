@@ -1,0 +1,28 @@
+---
+- name: Allow LAN access to tcp port 5432 - PostgreSQL
+  ufw:
+    rule: allow
+    port: 5432
+    proto: tcp
+    from: "{{ lan_network }}"
+
+- name: Allow Docker access to tcp port 5432 - Patroni HTTP API
+  ufw:
+    rule: allow
+    port: 5432
+    proto: tcp
+    from: "{{ docker_network }}"
+
+- name: Allow LAN access to tcp port 8008 - Patroni HTTP API
+  ufw:
+    rule: allow
+    port: 8008
+    proto: tcp
+    from: "{{ lan_network }}"
+
+- name: Allow Docker access to tcp port 8008 - Patroni HTTP API
+  ufw:
+    rule: allow
+    port: 8008
+    proto: tcp
+    from: "{{ docker_network }}"

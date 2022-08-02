@@ -1,0 +1,9 @@
+---
+- name: Add hosts in ansible inventory to /etc/hosts on all hosts
+  lineinfile:
+    dest: /etc/hosts
+    regexp: '.*{{ item }}$'
+    line: "{{ hostvars[item].lan_host }} {{item}}"
+    state: present
+  when: hostvars[item].lan_host is defined
+  with_items: "{{ groups.all }}"

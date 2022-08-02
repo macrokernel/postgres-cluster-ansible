@@ -1,0 +1,54 @@
+---
+- block:
+  - name: Create {{ docker_consul_config_json_location }}
+    file:
+      path: "{{ docker_consul_config_json_location }}"
+      state: directory
+
+  - name: Template and copy over consul {{ docker_consul_config_json_file_name }}
+    template:
+      src: "{{ docker_consul_config_json_template }}"
+      dest: "{{ docker_consul_config_json_location }}/{{ docker_consul_config_json_file_name }}"
+      owner: root
+      group: root
+      mode: 0644
+  when: docker_consul_config_json_template|default("") != ""
+
+
+- block:
+  - name: Create {{ docker_consul_docker_compose_location }}
+    file:
+      path: "{{ docker_consul_docker_compose_location }}"
+      state: directory
+
+  - name: Template and copy over consul docker-compose file
+    template:
+      src: "{{ docker_consul_docker_compose_template }}"
+      dest: "{{ docker_consul_docker_compose_location }}/{{ docker_consul_docker_compose_file_name }}"
+      owner: root
+      group: root
+      mode: 0644
+  when: docker_consul_docker_compose_template|default("") != ""
+
+
+- block:
+  - name: Create {{ docker_consul_service_location }}
+    file:
+      path: "{{ docker_consul_service_location }}"
+      state: directory
+
+  - name: Template and copy over the systemd service file
+    template:
+      src: "{{ docker_consul_service_template }}"
+      dest: "{{ docker_consul_service_location }}/{{ docker_consul_service_name }}.service"
+      owner: root
+      group: root
+      mode: 0644
+
+  - name: Reload systemd
+    systemd:
+      state: restarted
+      daemon_reload: yes
+      enabled: yes
+      name: "{{ docker_consul_service_name }}"
+  when: (docker_consul_service_template|default("") != "") and (ansible_service_mgr == "systemd")

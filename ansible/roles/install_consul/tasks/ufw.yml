@@ -1,0 +1,63 @@
+---
+- name: Allow LAN access to tcp port 8300 - Consul Server RPC
+  ufw:
+    rule: allow
+    port: 8300
+    proto: tcp
+    from: "{{ lan_network }}"
+
+- name: Allow LAN access to tcp port 8301 - Consul Serf LAN
+  ufw:
+    rule: allow
+    port: 8301
+    proto: tcp
+    from: "{{ lan_network }}"
+
+- name: Allow LAN access to udp port 8301 - Consul Serf LAN
+  ufw:
+    rule: allow
+    port: 8301
+    proto: udp
+    from: "{{ lan_network }}"
+
+- name: Allow LAN access to tcp port 8500 - Consul HTTP API
+  ufw:
+    rule: allow
+    port: 8500
+    proto: tcp
+    from: "{{ lan_network }}"
+
+- name: Allow Docker access to tcp port 8500 - Consul HTTP API
+  ufw:
+    rule: allow
+    port: 8500
+    proto: tcp
+    from: "{{ docker_network }}"
+
+- name: Allow LAN access to tcp port 53 - Consul DNS server
+  ufw:
+    rule: allow
+    port: 53
+    proto: tcp
+    from: "{{ lan_network }}"
+
+- name: Allow LAN access to udp port 53 - Consul DNS server
+  ufw:
+    rule: allow
+    port: 53
+    proto: udp
+    from: "{{ lan_network }}"
+
+- name: Allow Docker access to tcp port 53 - Consul DNS server
+  ufw:
+    rule: allow
+    port: 53
+    proto: tcp
+    from: "{{ docker_network }}"
+
+- name: Allow Docker access to udp port 53 - Consul DNS server
+  ufw:
+    rule: allow
+    port: 53
+    proto: udp
+    from: "{{ docker_network }}"

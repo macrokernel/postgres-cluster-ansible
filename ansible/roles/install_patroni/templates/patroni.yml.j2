@@ -1,0 +1,100 @@
+name: {{ inventory_hostname }}
+scope: {{ patroni_scope }}
+
+consul:
+  host: "{{ lan_host }}:8500"
+  register_service: true
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: "{{ lan_host }}:8008"
+  auth: 'username:password'
+
+watchdog:
+  mode: {{ patroni_watchdog|default("automatic") }}
+  device: /dev/watchdog
+
+bootstrap:
+  method: {{ patroni_bootstrap_method|default("initdb") }}
+  walg:
+    keep_existing_recovery_conf: false
+    no_params: true
+    command: 'bash -c "wal-g --config /var/lib/postgresql/{{ docker_patroni_walg_json_file_name }} backup-fetch /var/lib/postgresql/data LATEST |tee -a /var/lib/postgresql/walg-bootstrap.log"'
+    recovery_conf:
+      restore_command: 'wal-g --config /var/lib/postgresql/{{ docker_patroni_walg_json_file_name }} wal-fetch "%f" "%p" 2>&1 |tee -a /var/lib/postgresql/walg-bootstrap.log'
+      recovery_target_action: promote
+      recovery_target_timeline: {{ patroni_recovery_target_timeline|default("latest") }}
+      recovery_target_time: "{{ patroni_recovery_target_time|default("") }}"
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576 # 1 megabyte in bytes
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      # Specify PostgreSQL parameters under this section
+      parameters:
+        archive_mode: 'on'
+        archive_timeout: 1800s
+        autovacuum_analyze_scale_factor: 0.02
+        autovacuum_max_workers: 5
+        autovacuum_vacuum_scale_factor: 0.05
+        checkpoint_completion_target: 0.9
+        hot_standby: 'on'
+        log_autovacuum_min_duration: 0
+        log_checkpoints: 'on'
+        log_connections: 'on'
+        log_directory: pg_log
+        log_disconnections: 'on'
+        log_duration: 'on'
+        log_filename: postgresql-%a.log
+        log_line_prefix: '%t [%p]: [%l-1] %c %x %d %u %a %h '
+        log_lock_waits: 'on'
+        log_min_duration_statement: 500
+        log_min_error_statement: NOTICE
+        log_min_messages: WARNING
+        log_rotation_age: '1440'
+        log_statement: ddl
+        log_temp_files: '0'
+        log_timezone: UTC
+        log_truncate_on_rotation: 'on'
+        logging_collector: 'on'
+        max_connections: 100
+        max_replication_slots: 10
+        max_wal_senders: 10
+        shared_preload_libraries: 'timescaledb'
+        tcp_keepalives_idle: 900
+        tcp_keepalives_interval: 100
+        track_functions: all
+        wal_compression: 'on'
+        wal_keep_size: 128
+        wal_level: replica
+        archive_command: 'wal-g --config /var/lib/postgresql/{{ docker_patroni_walg_json_file_name }} wal-push "%p" 2>&1 |tee -a /var/lib/postgresql/walg.log'
+      recovery_conf:
+        restore_command: 'wal-g --config /var/lib/postgresql/{{ docker_patroni_walg_json_file_name }} wal-fetch "%f" "%p" 2>&1 |tee -a /var/lib/postgresql/walg.log'
+  initdb:
+   - encoding: UTF8
+   - data-checksums
+  post_init: /usr/local/bin/docker-entrypoint-initdb.sh
+
+postgresql:
+  pgpass: /var/lib/postgresql/.pgpass
+  listen: 0.0.0.0:5432
+  connect_address: "{{ lan_host }}:5432"
+  data_dir: /var/lib/postgresql/data
+  pg_hba:
+    - local all all trust
+    - host replication replicator 127.0.0.1/32 trust
+    - host replication replicator {{ lan_network }} md5     # DB replication between postgres nodes via LAN
+    - host all all 0.0.0.0/0 md5
+  authentication:
+    replication:
+      username: {{ postgres_replicator_username }}
+      password: {{ postgres_replicator_password }}
+    superuser:
+      username: {{ postgres_superuser_username }}
+      password: {{ postgres_superuser_password }}
+    rewind:
+      username: {{ postgres_superuser_username }}
+      password: {{ postgres_superuser_password }}

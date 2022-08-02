@@ -1,0 +1,20 @@
+---
+docker_patroni_docker_files_location: /opt/patroni/docker
+docker_patroni_docker_files_template: templates/docker
+
+docker_patroni_location: /opt/patroni
+docker_patroni_postgresql_env_template: postgresql.env.j2
+docker_patroni_postgresql_env_file_name: postgresql.env
+docker_patroni_config_yml_template: templates/patroni.yml.j2
+docker_patroni_config_yml_file_name: patroni.yml
+docker_patroni_walg_json_template: templates/walg.json.j2
+docker_patroni_walg_json_file_name: walg.json
+
+docker_patroni_docker_compose_location: /opt/patroni
+docker_patroni_docker_compose_template: templates/patroni-docker-compose.yml.j2
+docker_patroni_docker_compose_file_name: docker-compose.yml
+docker_patroni_docker_compose_binary_full_path: /usr/local/bin/docker-compose
+
+docker_patroni_service_location: /etc/systemd/system
+docker_patroni_service_template: templates/patroni-docker.service.j2
+docker_patroni_service_name: patroni-docker

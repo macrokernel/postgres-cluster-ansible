@@ -1,0 +1,13 @@
+---
+- block:
+  - name: Configure Consul DNS resolver in systemd-resolved
+    shell: |
+      sed -i "s/#DNS=/DNS={{ lan_host }}/g" "{{ systemd_resolved_config_file }}"
+      sed -i "s/#Domains=/Domains=~{{ consul_domain }}/g" "{{ systemd_resolved_config_file }}"
+      sed -i "s/#DNSSEC=.*/DNSSEC=no/g" "{{ systemd_resolved_config_file }}"
+
+  - name: Reload systemd
+    systemd:
+      state: restarted
+      name: "systemd-resolved"
+  when: (systemd_resolved_config_file|default("") != "") and (consul_domain|default("") != "") and (ansible_service_mgr == "systemd")

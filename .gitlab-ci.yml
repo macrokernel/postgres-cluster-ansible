@@ -1,0 +1,44 @@
+# Build a Docker image with CI/CD and push to the GitLab registry.
+# Docker-in-Docker documentation: https://docs.gitlab.com/ee/ci/docker/using_docker_build.html
+
+
+# Set these CI/CD Variables in GitLab GUI, make sure their values comply with ansible/group_vars/all.yml:
+# DOCKER_BASE_IMAGE = ubuntu:focal
+# PG_MAJOR = 14
+# POSTGIS_MAJOR = 3
+# POSTGRES_REPLICATOR_USERNAME = replicator
+# POSTGRES_REPLICATOR_PASSWORD = password
+# POSTGRES_SUPERUSER_USERNAME = postgres
+# POSTGRES_SUPERUSER_PASSWORD = password
+# TSDB_MAJOR = 2
+# WALG_VER = 2.0.0
+
+
+stages:
+  - build
+
+docker-build:
+  # Use the official docker image.
+  image: docker:latest
+  stage: build
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - tag="postgresql-${PG_MAJOR}-postgis-${POSTGIS_MAJOR}-timescaledb-${TSDB_MAJOR}"
+    - echo "$tag"
+    - docker build --pull -t "$CI_REGISTRY_IMAGE:${tag}"
+      --build-arg DOCKER_BASE_IMAGE=${DOCKER_BASE_IMAGE}
+      --build-arg PG_MAJOR=${PG_MAJOR}
+      --build-arg POSTGIS_MAJOR=${POSTGIS_MAJOR}
+      --build-arg TSDB_MAJOR=${TSDB_MAJOR}
+      --build-arg WALG_VER=${WALG_VER}
+      --build-arg POSTGRES_SUPERUSER_USERNAME=${POSTGRES_SUPERUSER_USERNAME}
+      docker/
+    - docker push "$CI_REGISTRY_IMAGE:${tag}"
+  # Run this job in a branch where a Dockerfile exists
+  rules:
+    - if: $CI_COMMIT_BRANCH
+      exists:
+        - docker/Dockerfile
