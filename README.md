@@ -25,7 +25,7 @@
 
 
 ## 1 Введение <a name="introduction"/>
-Docker-образ, содержащий программное обеспечение, необходимое для работы кластера PostgreSQL + PostGIS + TimescaleDB под управлением Patroni/Consul, собирается посредством GitLab CI/CD и хранится в репозитории образов GitLab container registry.
+Docker-образ, содержащий программное обеспечение, необходимое для работы кластера PostgreSQL + PostGIS + TimescaleDB под управлением Patroni/Consul, собирается посредством GitLab CI/CD и хранится в репозитории образов GitLab container registry. Конфигурация GitLab CI/CD описывается в файле _.gitlab-ci.yml_.
 
 Развёртывание кластера Patroni/Consul осуществляется автоматизированно посредством системы управления конфигурациями Ansible.
 
