@@ -1,4 +1,4 @@
-# PostgreSQL + PostGIS + TimescaleDB Patroni/Consul cluster with WAL-G backups
+# PostgreSQL + PostGIS + TimescaleDB Patroni/Consul cluster with WAL-G backups Ansible role
 
 Кластер СУБД Postgres + PostGIS + TimescaleDB под управлением Patroni и Consul с резервным копированием посредством WAL-G.
 
