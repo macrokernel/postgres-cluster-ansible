@@ -1,6 +1,6 @@
-# PostgreSQL + PostGIS + TimescaleDB Patroni/Consul cluster with WAL-G backups Ansible role
+# PostgreSQL + PostGIS + TimescaleDB Patroni/Consul cluster with WAL-G backups Ansible playbook
 
-Роль Ansible для развёртывания кластера СУБД Postgres + PostGIS + TimescaleDB под управлением Patroni и Consul с резервным копированием посредством WAL-G.
+Плейбук Ansible для развёртывания кластера СУБД Postgres + PostGIS + TimescaleDB под управлением Patroni и Consul с резервным копированием посредством WAL-G.
 
 ## Содержание
 1 [Введение](#introduction)  
