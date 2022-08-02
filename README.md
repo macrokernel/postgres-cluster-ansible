@@ -1,6 +1,6 @@
-# PostgreSQL + PostGIS + TimescaleDB Patroni/Consul cluster with WAL-G backups Ansible playbook
+# PostgreSQL + PostGIS + TimescaleDB Patroni/Consul cluster with WAL-G backups in Docker Compose Ansible playbook
 
-Плейбук Ansible для развёртывания кластера СУБД Postgres + PostGIS + TimescaleDB под управлением Patroni и Consul с резервным копированием посредством WAL-G.
+Плейбук Ansible для развёртывания кластера СУБД Postgres + PostGIS + TimescaleDB под управлением Patroni и Consul с резервным копированием посредством WAL-G в Docker Compose.
 
 ## Содержание
 1 [Введение](#introduction)  
