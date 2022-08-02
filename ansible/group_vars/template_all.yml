@@ -1,7 +1,3 @@
-# === Common soft settings
-docker_compose_version: "1.29.2"
-
-
 # === Docker registry and image settings
 # Docker container registry address, ex: gitlab.example.com:5050
 docker_registry_address: 
