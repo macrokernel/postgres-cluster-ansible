@@ -58,3 +58,7 @@ postgres_backup_keep_full: "7"
 postgres_backup_cron_day: "*"
 postgres_backup_cron_hour: "5"
 postgres_backup_cron_minute: "20"
+
+
+# === Docker Compose
+docker_compose_version: v2.9.0
