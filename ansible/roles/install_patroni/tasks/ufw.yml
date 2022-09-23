@@ -6,7 +6,7 @@
     proto: tcp
     from: "{{ lan_network }}"
 
-- name: Allow Docker access to tcp port 5432 - Patroni HTTP API
+- name: Allow Docker access to tcp port 5432 - PostgreSQL
   ufw:
     rule: allow
     port: 5432
