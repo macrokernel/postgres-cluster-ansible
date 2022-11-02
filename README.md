@@ -89,7 +89,7 @@ ansible-playbook -i inventory.ini 5_install_patroni.yml
 1. Запросить информацию о состоянии кластера Patroni можно выполнив на любом узле кластера команду
 
 ```shell
-$ docker exec -it patroni patronictl -c /etc/patroni/patroni.yml list
+$ docker exec -it patroni patronictl -c /var/lib/postgresql/patroni.yml list
 +--------+-------------+---------+---------+----+-----------+
 | Member | Host        | Role    | State   | TL | Lag in MB |
 + Cluster: patroni-cluster (7096851968026091552) -----------+
